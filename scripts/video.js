@@ -1,3 +1,21 @@
+
+function getTimeString(time){
+    // get hour and rest seconds
+    const hour = parseInt(time / 3600);
+    let remainingSecond = time % 3600;
+    const minute = parseInt(remainingSecond / 60);
+    remainingSecond = remainingSecond % 60;
+    return `${hour} hour ${minute} minute ${remainingSecond} second ago`;
+}
+
+const removeActiveClass = () =>{
+    const buttons = document.getElementsByClassName('category-btn');
+    console.log(buttons);
+    for(let btn of buttons){
+        btn.classList.remove('active');
+    }
+}
+
 // 1. Fetch, load and show categories on html
 
 // create loadCategories
@@ -21,19 +39,57 @@ const loadVideos = () => {
     .catch((error) => console.error(error))
 }
 
+const loadCategoryVideos = (id) =>{
+    // alert(id);
+    fetch(`https://openapi.programming-hero.com/api/phero-tube/category/${id}`)
+    .then((res) => res.json())
+    .then(data => {
+        // all buttons remove active class 
+        removeActiveClass();
+
+        // and then add active class in button that (button id)
+        const activeBtn = document.getElementById(`btn-${id}`);
+        activeBtn.classList.add('active');
+        displayVideos(data.category);
+    })
+    .catch((error) => console.error(error))
+}
+
 const displayVideos = (videos) => {
     const videoContainer = document.getElementById('videos');
+    videoContainer.innerHTML = '';
+
+    if(videos.length === 0){
+        videoContainer.classList.remove('grid');
+        videoContainer.innerHTML = `
+        <div class="min-h-[300px] flex flex-col gap-5 justify-center items-center">
+        <img src="assets/Icon.png"/>
+        <h2 class="text-center text-xl font-bold">
+        No Content Here in this Category
+        </h2>
+        </div>
+        `;
+        return;
+    }
+    else{
+        videoContainer.classList.add('grid');
+    }
+
+
     videos.forEach(video => {
         console.log(video)
         const card = document.createElement('div');
-        card.classList = 'card card-compact'
+        card.classList = 'card card-compact';
         card.innerHTML = 
         `
-        <figure>
+        <figure class="h-[200px] relative">
     <img
       src=${video.thumbnail}
       class="h-full w-full object-cover"
       alt="Shoes" />
+      ${video.others.posted_date?.length == 0 ?
+         '': 
+         ` <span class="absolute text-xs right-2 bottom-2 bg-black text-white rounded p-1">${getTimeString(video.others.posted_date)}</span>`}
   </figure>
   <div class="px-0 py-2 flex gap-2">
     <div>
@@ -43,7 +99,7 @@ const displayVideos = (videos) => {
     <h2 class="font-bold">${video.title}</h2>
     <div class="flex items-center gap-2">
     <P class="text-gray-400">${video.authors[0].profile_name}</p>
-    <img class="w-5" src="https://img.icons8.com/fluency/48/instagram-check-mark.png"/>
+   ${video.authors[0].verified === true ? `<img class="w-5" src="https://img.icons8.com/fluency/48/instagram-check-mark.png"/>`: ''}
     </div>
     <P></p>
     </div>
@@ -71,15 +127,24 @@ const displayCategories = (categories) => {
     const categoryContainer = document.getElementById('categories')
     categories.forEach((item) => {
         console.log(item);
-        // create a button
-        const button = document.createElement('button');
-        button.classList = 'btn';
-        button.innerText = item.category;
-        // add button category container
-        categoryContainer.append(button);
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.innerHTML =
+        `
+        <button id="btn-${item.category_id}" onclick="loadCategoryVideos(${item.category_id})" class="btn category-btn">
+        ${item.category}
+        </button>
+        `
+        categoryContainer.append(buttonContainer);
+        // // create a button
+        // const button = document.createElement('button');
+        // button.classList = 'btn';
+        // button.innerText = item.category;
+        // // add button category container
+        // categoryContainer.append(button);
 
     })
 }
 
 loadCategories();
-loadVideos()
+loadVideos();  
